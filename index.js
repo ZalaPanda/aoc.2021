@@ -2,9 +2,9 @@ const fs = require('fs');
 
 const day1 = () => {
     const raw = fs.readFileSync('input1.txt', { encoding: 'utf-8' }).split('\n').map(Number);
-    console.log(raw.reduce(({ prev = NaN, inc = 0 }, curr) => ({ prev: curr, inc: inc + (curr && prev && prev < curr ? 1 : 0) }), {}));
-    console.log(raw.map((curr, index, arr) => curr + arr[index + 1] + arr[index + 2]).reduce(({ prev = NaN, inc = 0 }, curr) => ({ prev: curr, inc: inc + (curr && prev && prev < curr ? 1 : 0) }), {}));
-}
+    console.log(raw.reduce(({ prev, inc }, curr) => ({ prev: curr, inc: inc + (curr && prev && prev < curr ? 1 : 0) }), { prev: NaN, inc: 0 }));
+    console.log(raw.map((curr, index, arr) => curr + arr[index + 1] + arr[index + 2]).reduce(({ prev, inc }, curr) => ({ prev: curr, inc: inc + (curr && prev && prev < curr ? 1 : 0) }), { prev: NaN, inc: 0 }));
+};
 // day1();
 
 const day2 = () => {
@@ -25,7 +25,7 @@ const day2 = () => {
             default: return [x, y, aim]
         }
     }, [0, 0, 0]).reduce((x, y, index) => index === 1 ? x * y : x));
-}
+};
 // day2();
 
 const day3 = () => {
@@ -53,5 +53,49 @@ const day3 = () => {
         .map(binary => parseInt(binary, 2)) // [3004, 1906]
         .reduce((number1, number2) => number1 * number2)
     );
-}
-day3();
+};
+// day3();
+
+const day4 = () => {
+    const { numbers, boards } = fs.readFileSync('input4.txt', { encoding: 'utf-8' }).split('\n\n')
+        .reduce(({ numbers, boards }, piece, index) => ({
+            numbers: !index && piece.split(',').map(Number) || numbers,
+            boards: index && [...boards, piece
+                .replace(/\n/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim().split(/\s/).map(Number)] || boards,
+        }), { numbers: [], boards: [] });
+    const size = [...Array(5)].map((_, index) => index); // [0, 1, 2, 3, 4]
+    console.log(numbers.slice(0).reduce((boards, picked, _, numbers) => {
+        const filtered = boards.map(board => board.map(number => number === picked ? NaN : number)); // zero number in bingo?!?
+        const winner = filtered.find(board => // row or column complete
+            size.find(row =>
+                size.find(col => !isNaN(board[row * 5 + col])) === undefined) !== undefined || // row complete
+            size.find(col =>
+                size.find(row => !isNaN(board[row * 5 + col])) === undefined) !== undefined); // column complete
+        if (winner) {
+            numbers.splice(0); // break reduce (DONT DO THIS!) source: https://stackoverflow.com/a/47441371
+            const sum = winner.reduce((sum, number) => sum + (number || 0), 0);
+            console.log({ picked, sum, winner }); // {picked: 71, sum: 562, winner: [64, 65, 6, 86, 53, 10, 56, 2, 88, NaN, 11, NaN, NaN, 84, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, 19, 14, 4]}
+            return sum * picked;
+        }
+        return filtered;
+    }, boards));
+    console.log(numbers.slice(0).reduce((boards, picked, _, numbers) => {
+        const filtered = boards.map(board => board.map(number => number === picked ? NaN : number));
+        const survived = filtered.filter(board =>
+            size.find(row =>
+                size.find(col => !isNaN(board[row * 5 + col])) === undefined) === undefined && // rows NOT complete
+            size.find(col =>
+                size.find(row => !isNaN(board[row * 5 + col])) === undefined) === undefined); // columns NOT complete
+        if (!survived.length) {
+            const looser = filtered[0];
+            numbers.splice(0);
+            const sum = looser.reduce((sum, number) => sum + (number || 0), 0);
+            console.log({ picked, sum, looser }); // {picked: 56, sum: 481, looser: [NaN, NaN, NaN, NaN, 32, NaN, NaN, 38, NaN, 45, 70, NaN, NaN, 86, NaN, NaN, NaN, NaN, 66, 60, NaN, NaN, 84, NaN, NaN]}
+            return sum * picked;
+        }
+        return survived;
+    }, boards));
+};
+// day4();

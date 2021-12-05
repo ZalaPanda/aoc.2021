@@ -99,3 +99,32 @@ const day4 = () => {
     }, boards));
 };
 // day4();
+
+const day5 = () => {
+    const raw = fs.readFileSync('input5.txt', { encoding: 'utf-8' }).split('\n')
+        .filter(line => line).map(line => /(\d+),(\d+) -> (\d+),(\d+)/.exec(line))
+        .map(([_, ...numbers]) => numbers.map(Number));
+    console.log(Object.values(raw
+        .reduce((map, [x1, y1, x2, y2]) => {
+            if (x1 === x2 || y1 === y2)
+                for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++)
+                    for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++)
+                        map[`${x}x${y}`] = (map[`${x}x${y}`] || 0) + 1;
+            return map;
+        }, {}))
+        .filter(heat => heat > 1)
+        .length);
+    console.log(Object.values(raw
+        .reduce((map, [x1, y1, x2, y2]) => {
+            const v1 = Math.sign(x2 - x1), v2 = Math.sign(y2 - y1); // vector
+            const d1 = Math.abs(x2 - x1), d2 = Math.abs(y2 - y1); // distance
+            [...Array(Math.max(d1, d2) + 1)].map((_, distance) => {
+                const x = x1 + v1 * distance, y = y1 + v2 * distance;
+                map[`${x}x${y}`] = (map[`${x}x${y}`] || 0) + 1;
+            });
+            return map;
+        }, {}))
+        .filter(heat => heat > 1)
+        .length);
+};
+day5();

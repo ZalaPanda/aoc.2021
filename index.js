@@ -127,4 +127,24 @@ const day5 = () => {
         .filter(heat => heat > 1)
         .length);
 };
-day5();
+// day5();
+
+const day6 = () => {
+    const raw = fs.readFileSync('input6.txt', { encoding: 'utf-8' }).trim().split(',').map(Number);
+    console.log([...Array(80)]
+        .reduce((raw) => {
+            // console.log(raw);
+            const born = raw.filter(age => !age).map(age => 8);
+            return [...raw.map(age => age ? age - 1 : 6), ...born];
+        }, raw) // [6, 0, 6, 4, ...]
+        .length);
+    const ages = [...Array(9)].map((_, index) => raw.filter(age => age === index).length); // [0, 205, 19, 27, 26, 23, 0, 0, 0]
+    console.log([...Array(256)]
+        .reduce(([born, ...ages]) => {
+            ages[6] += born;
+            ages[8] = born;
+            return ages;
+        }, ages) // [144736007595, 181435600984, 185574699634, 199674488787, 237842569956, 222918744459, 292760381752, 118624554229, 159768944646]
+        .reduce((sum, age) => sum + age));
+};
+day6();

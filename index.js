@@ -147,4 +147,21 @@ const day6 = () => {
         }, ages) // [144736007595, 181435600984, 185574699634, 199674488787, 237842569956, 222918744459, 292760381752, 118624554229, 159768944646]
         .reduce((sum, age) => sum + age));
 };
-day6();
+// day6();
+
+const day7 = () => {
+    const raw = fs.readFileSync('input7.txt', { encoding: 'utf-8' }).trim().split(',').map(Number);
+    console.log([...Array(Math.max(...raw) - Math.min(...raw))] // brute force (maybe could use median? but who cares)
+        .map((_, index) => index + Math.min(...raw))
+        .map(base => raw.reduce((distance, position) => distance + Math.abs(position - base), 0))
+        .reduce((min, cost) => Math.min(min, cost)));
+    const { cost } = [...Array(Math.max(...raw) + 1)] // cost[distance] = fuel
+        .map((_, index) => index) // [0, 1, 2, 3, 4, ...]
+        .reduce(({ cost, fuel }, distance) => ({ fuel: fuel + distance, cost: [...cost, fuel + distance] }), { fuel: 0, cost: [] }); // [0, 1, 3, 6, 10, ...]
+    console.log([...Array(Math.max(...raw) - Math.min(...raw))]
+        .map((_, index) => index + Math.min(...raw))
+        .map(base => raw.reduce((distance, position) => distance + cost[Math.abs(position - base)], 0))
+        .reduce((min, cost) => Math.min(min, cost))
+    );
+};
+day7();

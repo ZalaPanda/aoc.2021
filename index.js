@@ -195,5 +195,33 @@ const day8 = () => {
         }) // [417, 4099, 751, 3437, ...]
         .reduce((sum, number) => sum + number) // 936117
     );
+
+    console.log(raw // brute force < logic
+        .map(([inputs, outputs]) => {
+            const presence = inputs.reduce((presence, input) => {
+                [...input].map(bit => presence[bit] = (presence[bit] || 0) + 1);
+                return presence;
+            }, {});
+            // console.log(presence);
+            const one = inputs.find(input => input.length === 2);
+            const four = inputs.find(input => input.length === 4);
+            const cipher = Object.entries(presence).reduce((cipher, [bit, count]) => {
+                if (count === 4) return { ...cipher, [bit]: parseInt('0000100', 2) }; // "e"
+                if (count === 6) return { ...cipher, [bit]: parseInt('0100000', 2) }; // "b"
+                if (count === 7 && four.includes(bit)) return { ...cipher, [bit]: parseInt('0001000', 2) }; // "d"
+                if (count === 7 && !four.includes(bit)) return { ...cipher, [bit]: parseInt('0000001', 2) }; // "g"
+                if (count === 8 && one.includes(bit)) return { ...cipher, [bit]: parseInt('0010000', 2) }; // "c"
+                if (count === 8 && !one.includes(bit)) return { ...cipher, [bit]: parseInt('1000000', 2) }; // "a"
+                if (count === 9) return { ...cipher, [bit]: parseInt('0000010', 2) }; // "f"
+            }, {});
+            const numbers = ['1110111', '0010010', '1011101', '1011011', '0111010', '1101011', '1101111', '1010010', '1111111', '1111011'].map(bin => parseInt(bin, 2)); // number segments binary encoded: "abcdefg"
+            // console.log(cipher, numbers);
+            return outputs
+                .map(output => [...output].reduce((number, bit) => number + cipher[bit], 0))
+                .map(output => numbers.findIndex(number => number === output))
+                .reduce((number, output) => number * 10 + output, 0);
+        })
+        .reduce((sum, number) => sum + number) // 936117
+    );
 };
 day8();

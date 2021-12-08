@@ -164,4 +164,36 @@ const day7 = () => {
         .reduce((min, cost) => Math.min(min, cost))
     );
 };
-day7();
+// day7();
+
+const day8 = () => {
+    const raw = fs.readFileSync('input8.txt', { encoding: 'utf-8' }).split('\n').filter(line => line)
+        .map(line => line.split(' | ') // ['acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab', 'cdfeb fcadb cdfeb cdbaf']
+            .map(bits => bits.split(' '))); // [['acedgfb', 'cdfbe', ..., 'ab', 'cdfeb'], ['fcadb', 'cdfeb', 'cdbaf']]
+    const lenghts = [2, 4, 3, 7]; // '1' = 2 | '4' = 4 | '7' = 3 | '8' = 7
+    console.log(raw.reduce((count, [_, outputs]) => count + outputs.filter(output => lenghts.includes(output.length)).length, 0));
+
+    const generate = (bits, variation = '') => bits.length ? [...bits].map(bit => generate(bits.replace(bit, ''), variation.concat(bit))).flat() : variation;
+    const convert = (bits, variation) => [...bits].map(bit => variation['abcdefg'.indexOf(bit)]).join('');
+    const same = (a, b) => a.length === b.length && [...a].every(bit => b.includes(bit)); // alternative: [...a].sort().join('') === [...b].sort().join('')
+    const samples = ['cagedb', 'ab', 'gcdfa', 'fbcad', 'eafb', 'cdfbe', 'cdfgeb', 'dab', 'acedgfb', 'cefabd']; // 'cagedb' = 0, 'ab' = 1, ..., 'cefabd' = 9
+    const rainbow = generate('abcdefg'); // ['abcdefg', 'abcdegf', 'abcdfeg', ...]
+    console.log(raw
+        .map(([inputs, outputs]) => {
+            for (const variation of rainbow) {
+                const match = inputs // ['bgeacd', 'dbfag', ...]
+                    .map(input => convert(input, variation)) // ['adefbc', 'cagfd', ...]
+                    .every(input => samples.some(sample => same(sample, input)));
+                if (!match) continue;
+                // console.log(variation); // 'fabcegd'
+                return outputs // ['gcdfbe', 'cbea', 'bc', 'gbc']
+                    .map(output => convert(output, variation)) // ['dbcgae', 'baef', 'ab', 'dab']
+                    .map(output => samples.findIndex(sample => same(sample, output))) // [0, 4, 1, 7]
+                    .reduce((number, output) => number * 10 + output, 0); // 417
+            }
+            return NaN;
+        }) // [417, 4099, 751, 3437, ...]
+        .reduce((sum, number) => sum + number) // 936117
+    );
+};
+day8();

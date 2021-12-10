@@ -259,4 +259,40 @@ const day9 = () => {
         .reduce((sum, size) => sum * size) // 821560
     );
 };
-day9();
+// day9();
+
+const day10 = () => {
+    const raw = fs.readFileSync('input10.txt', { encoding: 'utf-8' }).split('\n').filter(line => line);
+    const points = {
+        invalid: { ')': 3, ']': 57, '}': 1197, '>': 25137 },
+        incomplete: { ')': 1, ']': 2, '}': 3, '>': 4 }
+    };
+    const pairs = { '(': ')', '[': ']', '{': '}', '<': '>' };
+    console.log(raw
+        .map(line => {
+            const stack = [];
+            return [...line].find(char => {
+                if ('([{<'.includes(char)) return stack.push(char) && false;
+                if (char === pairs[stack.pop()]) return false;
+                return true;
+            });
+        }) // [undefined, '>', '>', ...]
+        .map(char => points.invalid[char] || 0) // [0, 25137, 25137, ...]
+        .reduce((sum, point) => sum + point) // 341823
+    );
+    console.log(raw
+        .map(line => {
+            const stack = [];
+            return [...line].find(char => {
+                if ('([{<'.includes(char)) return stack.push(char) && false;
+                if (char === pairs[stack.pop()]) return false;
+                return true;
+            }) ? undefined : stack.reverse().map(char => pairs[char]);
+        }) // [['}', '}', '>', '>', '}', '>', ']', '}', '}', ']', ')', ']', '}', '}'], undefined, undefined, ...]
+        .filter(chars => chars)
+        .map(chars => chars.reduce((sum, char) => sum * 5 + points.incomplete[char], 0)) // [4636542068, 7693351448, 22952738, ...]
+        .sort((a, b) => a - b)
+        .reduce((middle, point, index, points) => Math.floor(points.length / 2) === index ? point : middle, NaN)
+    );
+};
+day10();

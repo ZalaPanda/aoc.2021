@@ -224,4 +224,39 @@ const day8 = () => {
         .reduce((sum, number) => sum + number) // 936117
     );
 };
-day8();
+// day8();
+
+const day9 = () => {
+    const raw = fs.readFileSync('input9.txt', { encoding: 'utf-8' });
+    const cols = raw.match(/\n/).index, rows = raw.match(/\n/g).length;
+    const heights = [...raw.replace(/\n/g, '')].map(Number);
+    const neighbours = (index) => [
+        index > cols - 1 && index - cols, // up
+        index + cols < cols * rows && index + cols, // down
+        index % cols > 0 && index - 1, // left
+        index % cols < cols - 1 && index + 1 // right
+    ].filter(index => index !== false);
+    console.log(heights
+        .filter((height, index) => neighbours(index).every(neighbour => heights[neighbour] > height)) // filter low heights
+        .map(height => height + 1) // calculate risk
+        .reduce((sum, risk) => sum + risk) // sum of the risk
+    );
+
+    const basinsize = (index) => {
+        const basin = [];
+        const expand = (index) => {
+            if (basin.includes(index)) return;
+            basin.push(index); // hate to mutate an array but can't find out a better solution
+            neighbours(index).filter(index => heights[index] < 9).map(expand);
+        };
+        expand(index);
+        return basin.length;
+    };
+    console.log(heights
+        .map((height, index) => neighbours(index).every(neighbour => heights[neighbour] > height) ? basinsize(index) : 0)
+        .sort((a, b) => b - a) // [95, 94, 92, 89, ...]
+        .filter((_, index) => index < Math.floor(Math.PI)) // ...waited for this soooo long
+        .reduce((sum, size) => sum * size) // 821560
+    );
+};
+day9();

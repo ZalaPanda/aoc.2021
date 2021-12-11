@@ -270,12 +270,19 @@ const day10 = () => {
     const pairs = { '(': ')', '[': ']', '{': '}', '<': '>' };
     console.log(raw
         .map(line => {
-            const stack = [];
+            const stack = []; // this could be a reduce too
             return [...line].find(char => {
                 if ('([{<'.includes(char)) return stack.push(char) && false;
                 if (char === pairs[stack.pop()]) return false;
                 return true;
             });
+            // no mutation version:
+            // return [...line].reduce(({ stack, invalid }, char) => {
+            //     if (invalid) return { stack, invalid };
+            //     if ('([{<'.includes(char)) return { stack: [...stack, char], invalid };
+            //     if (char === pairs[stack.pop()]) return { stack: [...stack], invalid };
+            //     return { stack, invalid: char };
+            // }, { stack: [], invalid: null }).invalid
         }) // [undefined, '>', '>', ...]
         .map(char => points.invalid[char] || 0) // [0, 25137, 25137, ...]
         .reduce((sum, point) => sum + point) // 341823
@@ -295,4 +302,26 @@ const day10 = () => {
         .reduce((middle, point, index, points) => Math.floor(points.length / 2) === index ? point : middle, NaN)
     );
 };
-day10();
+// day10();
+
+const day11 = () => {
+    const raw = fs.readFileSync('input11.txt', { encoding: 'utf-8' }).trim()
+        .split('\n').map((line, y) =>
+            [...line].map((char, x) => ({ x, y, energy: Number(char) }))).flat();
+    const ajdust = (octopuses) => octopuses.map(({ x, y, energy }) => ({ x, y, energy: energy + 1 }));
+    const flash = (octopuses, flashes = 0) => {
+        const octopus = octopuses.find(({ energy }) => energy > 9); // first octopus with high energy level
+        if (!octopus) return [octopuses, flashes]; // calculation complete
+        return flash(octopuses.map(({ x, y, energy }) =>
+            energy && Math.abs(octopus.x - x) < 2 && Math.abs(octopus.y - y) < 2 ?
+                { x, y, energy: octopus.x === x && octopus.y === y ? 0 : energy + 1 } : { x, y, energy }), flashes + 1);
+    };
+    console.log([...Array(100)].reduce(([octopuses, flashes]) => flash(ajdust(octopuses), flashes), [raw, 0])[1]);
+
+    const syncstep = (octopuses, flashes = 0, step = 0) => {
+        if (flashes === octopuses.length) return step; // octopuses synchronizing
+        return syncstep(...flash(ajdust(octopuses)), step + 1);
+    }
+    console.log(syncstep(raw));
+};
+day11();

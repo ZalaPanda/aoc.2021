@@ -170,8 +170,8 @@ const day8 = () => {
     const raw = fs.readFileSync('input8.txt', { encoding: 'utf-8' }).split('\n').filter(line => line)
         .map(line => line.split(' | ') // ['acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab', 'cdfeb fcadb cdfeb cdbaf']
             .map(bits => bits.split(' '))); // [['acedgfb', 'cdfbe', ..., 'ab', 'cdfeb'], ['fcadb', 'cdfeb', 'cdbaf']]
-    const lenghts = [2, 4, 3, 7]; // '1' = 2 | '4' = 4 | '7' = 3 | '8' = 7
-    console.log(raw.reduce((count, [_, outputs]) => count + outputs.filter(output => lenghts.includes(output.length)).length, 0));
+    const lengths = [2, 4, 3, 7]; // '1' = 2 | '4' = 4 | '7' = 3 | '8' = 7
+    console.log(raw.reduce((count, [_, outputs]) => count + outputs.filter(output => lengths.includes(output.length)).length, 0));
 
     const generate = (bits, variation = '') => bits.length ? [...bits].map(bit => generate(bits.replace(bit, ''), variation.concat(bit))).flat() : variation;
     const convert = (bits, variation) => [...bits].map(bit => variation['abcdefg'.indexOf(bit)]).join('');
@@ -324,4 +324,37 @@ const day11 = () => {
     }
     console.log(syncstep(raw));
 };
-day11();
+// day11();
+
+const day12 = () => {
+    const raw = fs.readFileSync('input12.txt', { encoding: 'utf-8' }).trim().split('\n')
+        .reduce((graph, row) => {
+            const [_, from, to] = /(\w+)-(\w+)/.exec(row);
+            return { ...graph, [from]: [...graph[from] || [], to], [to]: [...graph[to] || [], from] };
+        }, {});
+    const explore = (routes = (_from, _path) => [], path = ['start']) => {
+        const from = path.at(-1); // supported from Node.js 16.6.0
+        if (from === 'end') return path.join();
+        if (!raw[from]) return undefined; // dead end
+        return routes(from, path) // get possible routes from current location
+            .map(to => explore(routes, [...path, to])) // explore every option
+            .filter(path => path) // remove failed missions
+            .flat();
+    };
+
+    const routes1 = (from, path) => raw[from].filter(to =>
+        to === to.toUpperCase() || // big cave
+        !path.includes(to) // not visited
+    );
+    console.log(explore(routes1).length);
+
+    const routes2 = (from, path) => raw[from].filter(to =>
+        to !== 'start' && (
+            to === to.toUpperCase() || // big cave
+            !path.includes(to) || // not visited
+            path.filter(from => from === from.toLowerCase()) // filter small caves
+                .every((from, index, path) => !path.slice(index + 1).includes(from)) // not visited twice
+        ));
+    console.log(explore(routes2).length);
+};
+day12();

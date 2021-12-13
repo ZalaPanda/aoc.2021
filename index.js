@@ -357,4 +357,32 @@ const day12 = () => {
         ));
     console.log(explore(routes2).length);
 };
-day12();
+// day12();
+
+const day13 = () => {
+    const [dots, instructions] = fs.readFileSync('input13.txt', { encoding: 'utf-8' }).split('\n')
+        .reduce(([dots, instructions], row) => {
+            const [, x, y] = /^(\d+),(\d+)$/.exec(row) ?? [];
+            const [, axis, value] = /^fold along (x|y)=(\d+)$/.exec(row) ?? [];
+            if (x && y) return [[...dots, { x: Number(x), y: Number(y) }], instructions];
+            if (axis && value) return [dots, [...instructions, { [axis]: Number(value) }]];
+            return [dots, instructions];
+        }, [[], []]);
+
+    const fold = (dots, instruction) => dots.map(({ x, y }) => ({
+        x: x > instruction.x ? instruction.x - (x - instruction.x) : x,
+        y: y > instruction.y ? instruction.y - (y - instruction.y) : y
+    })).filter(({ x, y }, index, dots) => !dots.slice(index + 1).some(dot => dot.x === x && dot.y === y));
+    console.log(fold(dots, instructions[0]).length);
+
+    const display = (dots) => {
+        const { x, y } = dots.reduce(({ x, y }, dot) => ({ x: Math.max(x, dot.x), y: Math.max(y, dot.y) }));
+        return dots.reduce((lines, { x, y }) =>
+            lines.map((line, iy) => line.map((dot, ix) => dot || x === ix && y === iy)),
+            Array(y + 1).fill(Array(x + 1).fill(false)))
+            .map(line => line.map(dot => dot ? '#' : '.').join(''))
+            .join('\n');
+    };
+    console.log(display(instructions.reduce((dots, instruction) => fold(dots, instruction), dots))); // wow!
+};
+day13();

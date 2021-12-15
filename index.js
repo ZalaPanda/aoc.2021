@@ -385,4 +385,66 @@ const day13 = () => {
     };
     console.log(display(instructions.reduce((dots, instruction) => fold(dots, instruction), dots))); // wow!
 };
-day13();
+// day13();
+
+const day14 = () => {
+    /*
+    const [template, pairs] = fs.readFileSync('input14.txt', { encoding: 'utf-8' }).split('\n')
+        .reduce(([template, pairs], row) => {
+            const [, init] = /^(\w+)$/.exec(row) ?? [];
+            const [, ab, c] = /^(\w{2}) -> (\w)$/.exec(row) ?? [];
+            return [init || template, ab && c && { ...pairs, [ab]: c } || pairs];
+        }, [null, {}]);
+    const polymerize = (template, pairs, step) => step ? polymerize([...template].reduce((template, b) => {
+        const ab = template.at(-1).concat(b);
+        return pairs[ab] ? template.concat(pairs[ab], b) : template.concat(b);
+    }), pairs, step - 1) : template;
+    const result = (template) => {
+        const elements = [...template].reduce((elements, element) => ({ ...elements, [element]: (elements[element] || 0) + 1 }), {});
+        const [min, max] = Object.values(elements).reduce(([min, max], count) => ([Math.min(min, count), Math.max(max, count)]), [template.length, 0]);
+        return max - min;
+    };
+    console.log(result(polymerize(template, pairs, 10)));
+    */
+    const [template, rules] = fs.readFileSync('input14.txt', { encoding: 'utf-8' }).split('\n')
+        .reduce(([template, rules], row) => {
+            const [, init] = /^(\w+)$/.exec(row) ?? [];
+            const [, a, c, b] = /^(\w)(\w) -> (\w)$/.exec(row) ?? []; // `ac` => `ab` + `bc`
+            const analize = (init) => ({
+                elements: [...init].reduce((elements, element) => {
+                    const count = elements[element] ?? 0;
+                    return { ...elements, [element]: count + 1 };
+                }, {}),
+                pairs: [...init].reduce((pairs, _, index) => {
+                    const pair = init.slice(index, index + 2);
+                    return pair.length === 2 ? { ...pairs, [pair]: (pairs[pair] ?? 0) + 1 } : pairs;
+                }, {})
+            });
+            return [
+                init && analize(init) || template, // { elements: { V: 4, P: 3, H: 1, ...}, pairs: { VP: 1, PP: 1, PH: 1, ...} }
+                a && b && c && { ...rules, [`${a}${c}`]: b } || rules // { CO: 'B', CV: 'N', HV: 'H', ...}
+            ];
+        }, [{}, {}]);
+    const polymerize = ({ elements, pairs }, rules, step) => {
+        if (!step) {
+            const [min, max] = Object.values(elements).reduce(([min, max], count) => ([
+                Math.min(min, count),
+                Math.max(max, count)
+            ]), [Infinity, 0]);
+            return max - min;
+        }
+        const template = Object.entries(pairs).reduce(({ elements, pairs }, [pair, count]) => {
+            const [a, c] = [...pair];
+            const b = rules[`${a}${c}`];
+            if (!b) return { elements, pairs }; // no rule for the pair
+            return {
+                elements: { ...elements, [b]: (elements[b] ?? 0) + count }, // increase `b` count
+                pairs: { ...pairs, [`${a}${b}`]: (pairs[`${a}${b}`] ?? 0) + count, [`${b}${c}`]: (pairs[`${b}${c}`] ?? 0) + count } // create `ab` and `bc` pairs from `ac`
+            };
+        }, { pairs: {}, elements });
+        return polymerize(template, rules, step - 1);
+    };
+    console.log(polymerize(template, rules, 10));
+    console.log(polymerize(template, rules, 40));
+};
+day14();

@@ -447,4 +447,41 @@ const day14 = () => {
     console.log(polymerize(template, rules, 10));
     console.log(polymerize(template, rules, 40));
 };
-day14();
+// day14();
+
+const day15 = () => {
+    const raw = fs.readFileSync('input15.txt', { encoding: 'utf-8' }).trim().split('\n').map(row => row.split('').map(Number));
+    const route = (map) => {
+        const width = map[0].length;
+        const risks = map.flat();
+        const costs = Array(risks.length).fill(Infinity);
+        let index = 0; // *sigh* performance is super but the algorithm is a mess
+        let reset = false;
+        while (true) {
+            const min = Math.min(
+                index >= width ? costs[index - width] : Infinity, // up
+                (index + 1) % width ? costs[index + 1] : Infinity, // right
+                index < costs.length - width ? costs[index + width] : Infinity, // down
+                index % width ? costs[index - 1] : Infinity // left
+            );
+            const cost = index ? min + risks[index] : 0;
+            reset = reset || costs[index] !== cost;
+            costs[index] = cost;
+            index += 1;
+            if (index < risks.length) continue;
+            if (!reset) break;
+            index = 0;
+            reset = false;
+        }
+        return costs.at(-1);
+    };
+    console.log(route(raw));
+
+    const expand = (times) =>
+        [...Array(times)].map((_, y) => raw.map(row =>
+            [...Array(times)].map((_, x) => row.map(risk =>
+                (risk + x + y - 1) % 9 + 1 // 9->9 10->1 11->2
+            )).flat())).flat();
+    console.log(route(expand(5)));
+};
+day15();

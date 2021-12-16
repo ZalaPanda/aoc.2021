@@ -1,3 +1,3 @@
-Solutions for [Advent of Code - 2021](https://adventofcode.com/2021) in [Node.js](https://nodejs.org/) 🎄🎠✨
+![JIF](aoc.gif)
 
-![stars](https://badgen.net/badge/Stars/28%20%E2%AD%90)
+**JavaScript** solutions for [Advent of Code](https://adventofcode.com/2021) **2021** 🎄🎠✨ 

@@ -484,4 +484,100 @@ const day15 = () => {
             )).flat())).flat();
     console.log(route(expand(5)));
 };
-day15();
+// day15();
+
+const day16 = () => {
+    const raw = fs.readFileSync('input16.txt', { encoding: 'utf-8' }).trim().split('').map(hex => parseInt(hex, 16).toString(2).padStart(4, '0')).join('');
+    const packet = (start = 0) => {
+        const literal = (start, previous = 0) => { // 1+4 bits
+            const value = previous * 16 + parseInt(raw.slice(start + 1, start + 5), 2);
+            if (raw.slice(start, start + 1) === '0') return [value, start + 5];
+            return literal(start + 5, value)
+        };
+        const operator = (start) => {
+            if (raw.slice(start, start + 1) === '0') { // 1+15 bits
+                const lengthInBits = parseInt(raw.slice(start + 1, start + 16), 2);
+                const packets = (start, length, values = []) => {
+                    if (!length) return [values, start];
+                    const [value, end] = packet(start);
+                    return packets(end, length + start - end, [...values, value]);
+                };
+                return packets(start + 16, lengthInBits);
+            } else { // 1+11 bits
+                const numberOfSubPackets = parseInt(raw.slice(start + 1, start + 12), 2);
+                const packets = (start, number, values = []) => {
+                    if (!number) return [values, start];
+                    const [value, end] = packet(start);
+                    return packets(end, number - 1, [...values, value]);
+                };
+                return packets(start + 12, numberOfSubPackets);
+            }
+        };
+        const version = parseInt(raw.slice(start, start + 3), 2); // 3 bits
+        const type = parseInt(raw.slice(start + 3, start + 6), 2); // 3 bits
+        const [value, end] = type === 4 ? literal(start + 6) : operator(start + 6);
+        return [{ version, type, value }, end];
+    };
+    const summarize = ({ version, type, value }) => // add up the version numbers
+        version + (type === 4 ? 0 : value.reduce((sum, packet) =>
+            sum + summarize(packet), 0));
+    console.log(summarize(packet()[0]));
+
+    const evaluate = ({ type, value }) => { // evaluate the expression
+        if (type === 0) return value.reduce((sum, packet) => sum + evaluate(packet), 0);
+        if (type === 1) return value.reduce((product, packet) => product * evaluate(packet), 1);
+        if (type === 2) return value.reduce((minimum, packet) => Math.min(minimum, evaluate(packet)), Infinity);
+        if (type === 3) return value.reduce((maximum, packet) => Math.max(maximum, evaluate(packet)), -Infinity);
+        if (type === 4) return value; // literal
+        if (type === 5) return value.reduce((greater, than) => evaluate(greater) > evaluate(than) ? 1 : 0);
+        if (type === 6) return value.reduce((less, than) => evaluate(less) < evaluate(than) ? 1 : 0);
+        if (type === 7) return value.reduce((equal, to) => evaluate(equal) === evaluate(to) ? 1 : 0);
+    };
+    console.log(evaluate(packet()[0]));
+};
+// day16();
+
+const day17 = () => {
+    const [minx, maxx, miny, maxy] = fs.readFileSync('input17.txt', { encoding: 'utf-8' }).trim()
+        .match(/x=(-?\d+)..(-?\d+), y=(-?\d+)..(-?\d+)/)
+        .map(Number).filter(coordinate => coordinate);
+    const height = (vy, max = 0) => vy > 0 ? height(vy - 1, max + vy) : max;
+    const vertical = (vy, cy = 0, step = 0, steps = []) => {
+        if (cy < miny) return steps;
+        return vertical(
+            vy - 1, // decrease velocity
+            cy + vy, // increase current position
+            step + 1, // increase step number
+            cy >= miny && cy <= maxy ? [...steps, step] : steps);
+    };
+    const verticals = [...Array(1000)] // after 4 hours of sleep i am lazy AF
+        .map((_, index) => index + miny)
+        .reduce((verticals, vy) => {
+            const steps = vertical(vy);
+            return steps.length ? { ...verticals, [vy]: steps } : { ...verticals };
+        }, {});
+    console.log(height(Object.keys(verticals).map(Number).sort((a, b) => a - b).at(-1)));
+
+    const maxstep = Math.max(...Object.values(verticals).flat());
+    const horizontal = (vx, cx = 0, step = 0, steps = []) => {
+        if (step > maxstep || cx > maxx) return steps;
+        return horizontal(
+            vx ? vx - 1 : vx, // decrease velocity until zero
+            cx + vx, // increase current position
+            step + 1, // increase step number
+            cx >= minx && cx <= maxx ? [...steps, step] : steps);
+    };
+    const horizontals = [...Array(maxx)]
+        .map((_, index) => index + 1)
+        .reduce((horizontals, vx) => {
+            const steps = horizontal(vx);
+            return steps.length ? { ...horizontals, [vx]: steps } : { ...horizontals };
+        }, {});
+    const combinations = Object.keys(horizontals).reduce((combinations, vx) =>
+        [...combinations, ...Object.keys(verticals)
+            .filter(vy => verticals[vy].some(step => horizontals[vx].includes(step))) // shared step number
+            .map(vy => `${vx},${vy}`)
+        ], []); // ['15,0', '15,1', '15,2', ...]
+    console.log(combinations.length);
+};
+day17();

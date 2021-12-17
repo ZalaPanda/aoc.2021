@@ -550,7 +550,7 @@ const day17 = () => {
             step + 1, // increase step number
             cy >= miny && cy <= maxy ? [...steps, step] : steps);
     };
-    const verticals = [...Array(1000)] // after 4 hours of sleep i am lazy AF
+    const verticals = [...Array(1000)] // after 4 hours of sleep i am lazy AF (if `miny` is negative then max velocity is somewhere at `Math.abs(miny)`))
         .map((_, index) => index + miny)
         .reduce((verticals, vy) => {
             const steps = vertical(vy);

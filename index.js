@@ -1,5 +1,6 @@
 const fs = require('fs');
 
+/** Sonar Sweep */
 const day1 = () => {
     const raw = fs.readFileSync('input1.txt', { encoding: 'utf-8' }).split('\n').map(Number);
     console.log(raw.reduce(({ prev, inc }, curr) => ({ prev: curr, inc: inc + (curr && prev && prev < curr ? 1 : 0) }), { prev: NaN, inc: 0 }));
@@ -7,6 +8,7 @@ const day1 = () => {
 };
 // day1();
 
+/** Dive! */
 const day2 = () => {
     const raw = fs.readFileSync('input2.txt', { encoding: 'utf-8' }).split('\n').map(text => text.split(' ').map((value, index) => index ? Number(value) : value));
     console.log(raw.reduce(([x, y], [command, value]) => {
@@ -28,6 +30,7 @@ const day2 = () => {
 };
 // day2();
 
+/** Binary Diagnostic */
 const day3 = () => {
     const raw = fs.readFileSync('input3.txt', { encoding: 'utf-8' }).split('\n').map(text => [...text].map(Number)).filter(bits => bits.length);
     console.log(raw
@@ -56,6 +59,7 @@ const day3 = () => {
 };
 // day3();
 
+/** Giant Squid */
 const day4 = () => {
     const { numbers, boards } = fs.readFileSync('input4.txt', { encoding: 'utf-8' }).split('\n\n')
         .reduce(({ numbers, boards }, piece, index) => ({
@@ -100,6 +104,7 @@ const day4 = () => {
 };
 // day4();
 
+/** Hydrothermal Venture */
 const day5 = () => {
     const raw = fs.readFileSync('input5.txt', { encoding: 'utf-8' }).split('\n')
         .filter(line => line).map(line => /(\d+),(\d+) -> (\d+),(\d+)/.exec(line))
@@ -129,6 +134,7 @@ const day5 = () => {
 };
 // day5();
 
+/** Lanternfish */
 const day6 = () => {
     const raw = fs.readFileSync('input6.txt', { encoding: 'utf-8' }).trim().split(',').map(Number);
     console.log([...Array(80)]
@@ -149,6 +155,7 @@ const day6 = () => {
 };
 // day6();
 
+/** The Treachery of Whales */
 const day7 = () => {
     const raw = fs.readFileSync('input7.txt', { encoding: 'utf-8' }).trim().split(',').map(Number);
     console.log([...Array(Math.max(...raw) - Math.min(...raw))] // brute force (maybe could use median? but who cares)
@@ -166,6 +173,7 @@ const day7 = () => {
 };
 // day7();
 
+/** Seven Segment Search */
 const day8 = () => {
     const raw = fs.readFileSync('input8.txt', { encoding: 'utf-8' }).split('\n').filter(line => line)
         .map(line => line.split(' | ') // ['acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab', 'cdfeb fcadb cdfeb cdbaf']
@@ -226,6 +234,7 @@ const day8 = () => {
 };
 // day8();
 
+/** Smoke Basin */
 const day9 = () => {
     const raw = fs.readFileSync('input9.txt', { encoding: 'utf-8' });
     const cols = raw.match(/\n/).index, rows = raw.match(/\n/g).length;
@@ -261,6 +270,7 @@ const day9 = () => {
 };
 // day9();
 
+/** Syntax Scoring */
 const day10 = () => {
     const raw = fs.readFileSync('input10.txt', { encoding: 'utf-8' }).split('\n').filter(line => line);
     const points = {
@@ -304,6 +314,7 @@ const day10 = () => {
 };
 // day10();
 
+/** Dumbo Octopus */
 const day11 = () => {
     const raw = fs.readFileSync('input11.txt', { encoding: 'utf-8' }).trim()
         .split('\n').map((line, y) =>
@@ -326,6 +337,7 @@ const day11 = () => {
 };
 // day11();
 
+/** Passage Pathing */
 const day12 = () => {
     const raw = fs.readFileSync('input12.txt', { encoding: 'utf-8' }).trim().split('\n')
         .reduce((graph, row) => {
@@ -359,6 +371,7 @@ const day12 = () => {
 };
 // day12();
 
+/** Transparent Origami */
 const day13 = () => {
     const [dots, instructions] = fs.readFileSync('input13.txt', { encoding: 'utf-8' }).split('\n')
         .reduce(([dots, instructions], row) => {
@@ -387,6 +400,7 @@ const day13 = () => {
 };
 // day13();
 
+/** Extended Polymerization */
 const day14 = () => {
     /*
     const [template, pairs] = fs.readFileSync('input14.txt', { encoding: 'utf-8' }).split('\n')
@@ -449,6 +463,7 @@ const day14 = () => {
 };
 // day14();
 
+/** Chiton */
 const day15 = () => {
     const raw = fs.readFileSync('input15.txt', { encoding: 'utf-8' }).trim().split('\n').map(row => row.split('').map(Number));
     const route = (map) => {
@@ -486,6 +501,7 @@ const day15 = () => {
 };
 // day15();
 
+/** Packet Decoder */
 const day16 = () => {
     const raw = fs.readFileSync('input16.txt', { encoding: 'utf-8' }).trim().split('').map(hex => parseInt(hex, 16).toString(2).padStart(4, '0')).join('');
     const packet = (start = 0) => {
@@ -537,6 +553,7 @@ const day16 = () => {
 };
 // day16();
 
+/** Trick Shot */
 const day17 = () => {
     const [minx, maxx, miny, maxy] = fs.readFileSync('input17.txt', { encoding: 'utf-8' }).trim()
         .match(/x=(-?\d+)..(-?\d+), y=(-?\d+)..(-?\d+)/)
@@ -580,4 +597,61 @@ const day17 = () => {
         ], []); // ['15,0', '15,1', '15,2', ...]
     console.log(combinations.length);
 };
-day17();
+// day17();
+
+/** Snailfish */
+const day18 = () => {
+    const raw = fs.readFileSync('input18.txt', { encoding: 'utf-8' }).trim().split('\n').map(value => JSON.parse(value));
+    const add = (values) => values.reduce((a, b) => reduce([a, b]));
+    const magnitude = (value) => Array.isArray(value) ? 3 * magnitude(value[0]) + 2 * magnitude(value[1]) : value;
+    const explodingPair = (value, path = []) => Array.isArray(value) ? ( // leftmost pair nested inside four pairs
+        path.length === 4 ? { value, path } : value.reduce((result, value, index) => result || explodingPair(value, [...path, index]), null)) : null;
+    const splittingNumber = (value, path = []) => Array.isArray(value) ? ( // leftmost regular number is 10 or greater
+        value.reduce((result, value, index) => result || splittingNumber(value, [...path, index]), null)) : (value > 9 && { value, path });
+    const numberPaths = (value, path = []) => Array.isArray(value) && // every regular number with value and path
+        value.map((value, index) => numberPaths(value, [...path, index])).flat() ||
+        { value, path };
+    const equalPaths = (a, b) => a?.length === b?.length && a.every((value, index) => value === b[index]) || false;
+    const changeValue = (value, changes = [], path = []) => {
+        const change = changes.find(change => equalPaths(path, change.path));
+        if (change) return change.value;
+        return Array.isArray(value) ? value.map((value, index) => changeValue(value, changes, [...path, index])) : value;
+    };
+    const explode = (value, pair) => {
+        // console.log(JSON.stringify(value), 'explode', JSON.stringify(pair.value));
+        const siblings = numberPaths(value).reduce(({ left, right, previous }, current) => {
+            if (!previous) return { previous: current }; // no need to check at the first number
+            const match = {
+                current: equalPaths(current.path.slice(0, -1), pair.path),
+                previous: equalPaths(previous.path.slice(0, -1), pair.path)
+            };
+            return ({
+                left: left || (match.current && !match.previous && ({ path: previous.path, value: previous.value + current.value })),
+                right: right || (!match.current && match.previous && ({ path: current.path, value: previous.value + current.value })),
+                previous: current
+            })
+        }, {});
+        const changes = [
+            { path: pair.path, value: 0 },
+            { path: siblings.left?.path, value: siblings.left?.value },
+            { path: siblings.right?.path, value: siblings.right?.value }
+        ].filter(({ path }) => path);
+        return changeValue(value, changes);
+    };
+    const split = (value, number) => {
+        // console.log(JSON.stringify(value), 'split', JSON.stringify(number.value));
+        const changes = [{ path: number.path, value: [Math.floor(number.value / 2), Math.ceil(number.value / 2)] }];
+        return changeValue(value, changes);
+    };
+    const reduce = (value) => {
+        const pair = explodingPair(value); // "If any pair is nested inside four pairs, the leftmost such pair explodes."
+        if (pair) return reduce(explode(value, pair));
+        const number = splittingNumber(value); // "If any regular number is 10 or greater, the **leftmost(!)** such regular number splits."
+        if (number) return reduce(split(value, number));
+        return value;
+    };
+    console.log(magnitude(add(raw)));
+
+    console.log(raw.reduce((max, a) => Math.max(max, raw.reduce((max, b) => a === b ? max : Math.max(max, magnitude(add([a, b]))), 0)), 0)); // 6.7 sec
+};
+day18();

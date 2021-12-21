@@ -654,4 +654,100 @@ const day18 = () => {
 
     console.log(raw.reduce((max, a) => Math.max(max, raw.reduce((max, b) => a === b ? max : Math.max(max, magnitude(add([a, b]))), 0)), 0)); // 6.7 sec
 };
-day18();
+// day18();
+
+/** Beacon Scanner */
+const day19 = () => {
+    const raw = fs.readFileSync('input19.txt', { encoding: 'utf-8' }).trim().split('\n\n')
+        .map(scanner => scanner.split('\n')
+            .map(coordinates => coordinates.match(/(-?\d+),(-?\d+),(-?\d+)/)?.slice(1).map(Number))
+            .filter(coordinates => coordinates));
+
+    const equal = ([x1, y1, z1], [x2, y2, z2]) => x1 === x2 && y1 === y2 && z1 === z2;
+    const like = ([x1, y1, z1], [x2, y2, z2]) => [x1, y1, z1].every(n1 => [x2, y2, z2].some(n2 => Math.abs(n1) === Math.abs(n2)));
+    const useless = ([x, y, z]) => !x || !y || !z || x === y || y === z || z === x;
+    const add = ([x1, y1, z1], [x2, y2, z2]) => [x1 + x2, y1 + y2, z1 + z2];
+    const sub = ([x1, y1, z1], [x2, y2, z2]) => [x1 - x2, y1 - y2, z1 - z2];
+    const rotate = (coordinates, [[i1, s1], [i2, s2], [i3, s3]]) => [coordinates[i1] * s1, coordinates[i2] * s2, coordinates[i3] * s3];
+
+    const connect = (absolute, scanner) => scanner.reduce((transformation, beacon) => {
+        if (transformation) return transformation;
+        const relativeVectors = scanner.filter(other => other !== beacon).map(other => sub(other, beacon)); // vectors: beacon->other beacons
+        const { absoluteBeacon, absoluteVector } = absolute.reduce((match, absoluteBeacon) => {
+            if (match) return match;
+            const absoluteVectors = absolute.filter(other => other !== absoluteBeacon).map(other => sub(other, absoluteBeacon))
+                .filter(absoluteVector => relativeVectors.some(relativeVector => like(relativeVector, absoluteVector))); // matching vectors
+            if (absoluteVectors.length < 3) return match; // increase this limit if something is wrong
+            const absoluteVector = absoluteVectors.find(vector => !useless(vector)); // can't use [0, x, y] or [10, -10, z]
+            return { absoluteBeacon, absoluteVector };
+        }, null) ?? {};
+        if (!absoluteBeacon) return transformation;
+        const relativeVector = relativeVectors.find(vector => like(vector, absoluteVector));
+        const rotation = absoluteVector.map(n1 => {
+            const index = relativeVector.findIndex(n2 => Math.abs(n1) === Math.abs(n2));
+            const sign = Math.sign(relativeVector[index] * n1);
+            return [index, sign];
+        });
+        const translation = sub(absoluteBeacon, rotate(beacon, rotation));
+        return { rotation, translation };
+    }, null);
+
+    const resolve = ([absolute, scanner, ...scanners], translations = [[0, 0, 0]]) => {
+        if (!scanner) return [absolute, translations];
+        const transformation = connect(absolute, scanner);
+        if (!transformation) return resolve([absolute, ...scanners, scanner], translations); // no connection between known and scanner beacons
+        const resolved = scanner.map(beacon => add(rotate(beacon, transformation.rotation), transformation.translation))
+            .filter(beacon => !absolute.some(other => equal(other, beacon))); // resolved beacon locations
+        return resolve([[...absolute, ...resolved], ...scanners], [...translations, transformation.translation]);
+    };
+
+    const [beacons, scanners] = resolve(raw);
+    console.log(beacons.length);
+
+    const distance = ([x1, y1, z1], [x2, y2, z2]) => Math.abs(x1 - x2) + Math.abs(y1 - y2) + Math.abs(z1 - z2);
+    const distances = scanners.map(scanner => scanners.filter(other => other !== scanner).map(other => distance(scanner, other))).flat();
+    console.log(Math.max(...distances));
+};
+// day19();
+
+/** Trench Map */
+const day20 = () => {
+    const { image, algorithm } = fs.readFileSync('input20.txt', { encoding: 'utf-8' }).trim().split('\n\n').reduce((algorithm, lines) => {
+        const pixels = lines.split('\n').map(line => [...line].map(c => c === '#'));
+        return {
+            image: { pixels: pixels.flat(), width: pixels.at(0).length, background: false },
+            algorithm: [...algorithm].map(c => c === '#')
+        };
+    });
+    const expand = ({ pixels, width, background }) => ({ // TODO: improve performance
+        pixels: [
+            ...Array(width + 1).fill(background),
+            ...pixels.reduce((output, pixel, index) => index % width ? [...output, pixel] : [...output, background, background, pixel], []),
+            ...Array(width + 3).fill(background),
+        ],
+        width: width + 2,
+        background // "Every pixel of the infinite output image needs to be calculated exactly based on the relevant pixels of the input image"
+    });
+    const enhance = ({ pixels, width, background }) => { // TODO: improve performance
+        const indexes = (index) => index % width ? (index + 1) % width ?
+            [index - width - 1, index - width, index - width + 1, index - 1, index, index + 1, index + width - 1, index + width, index + width + 1] : // middle
+            [index - width - 1, index - width, null, index - 1, index, null, index + width - 1, index + width, null] : // rightmost
+            [null, index - width, index - width + 1, null, index, index + 1, null, index + width, index + width + 1]; // leftmost
+        return {
+            pixels: pixels.reduce((output, _, index) => {
+                const result = indexes(index).map(index => pixels[index] ?? background)
+                    .reduce((number, pixel, index) => pixel ? number + Math.pow(2, 8 - index) : number, 0);
+                return [...output, algorithm[result]];
+            }, []),
+            width,
+            background: algorithm[background ? Math.pow(2, 9) - 1 : 0]
+        };
+    };
+    const display = ({ pixels, width }) => pixels.reduce((output, pixel, index) =>
+        output.concat(pixel ? '#' : '.', (index + 1) % width ? '' : '\n'), '');
+    const process = (image, times) => times ? process(enhance(expand(image)), times - 1) : image;
+
+    console.log(process(image, 2).pixels.reduce((lit, pixel) => lit + (pixel ? 1 : 0), 0));
+    console.log(process(image, 50).pixels.reduce((lit, pixel) => lit + (pixel ? 1 : 0), 0));
+};
+day20();

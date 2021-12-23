@@ -750,4 +750,44 @@ const day20 = () => {
     console.log(process(image, 2).pixels.reduce((lit, pixel) => lit + (pixel ? 1 : 0), 0));
     console.log(process(image, 50).pixels.reduce((lit, pixel) => lit + (pixel ? 1 : 0), 0));
 };
-day20();
+// day20();
+
+/** Dirac Dice */
+const day21 = () => {
+    const raw = fs.readFileSync('input21.txt', { encoding: 'utf-8' }).trim().split('\n').map(line => /Player \d starting position: (\d)/.exec(line)?.map(Number).at(1));
+    const game = ([[currentSpace, score], player2], dice = 0) => {
+        const nextSpace = (currentSpace - 1 + dice * 3 + 6) % 10 + 1;
+        const player1 = [nextSpace, score + nextSpace];
+        if (player1[1] >= 1000) return player2[1] * (dice + 3); // losing player score * dice rolls
+        return game([player2, player1], dice + 3); // no need to reset dice
+    };
+    console.log(game(raw.map(position => [position, 0])));
+
+    const variate = (variations, roll, results = [0]) => roll ? variate(variations, roll - 1, variations.flatMap(dice => results.map(result => result + dice))) : results;
+    const rolls = Object.entries(
+        variate([1, 2, 3], 3) // [3, 4, 5, 4, 5, 6, 5, 6, 7, 4, 5, 6, 5, 6, 7, 6, 7, 8, 5, 6, 7, 6, 7, 8, 7, 8, 9]
+            .reduce((rolls, roll) => ({ ...rolls, [roll]: (rolls[roll] || 0) + 1 }), {})) // {3: 1, 4: 3, 5: 6, 6: 7, 7: 6, 8: 3, 9: 1}
+        .map(([roll, count]) => [Number(roll), count]); // [[3,1],[4,3],[5,6],[6,7],[7,6],[8,3],[9,1]]
+    const universes = (space) => {
+        const success = Array(15).fill(0); // mutation :P
+        const remains = Array(15).fill(0);
+        const play = (space, score = 0, turn = 0, universes = 1) => {
+            if (score >= 21) {
+                success[turn] += universes; // number of universes where player wins in (n) own steps
+            } else {
+                remains[turn] += universes; // number of universes where player still plays in (n) own steps
+                rolls.map(([roll, count]) => [(roll + space - 1) % 10 + 1, count]).map(([space, count]) => play(space, score + space, turn + 1, universes * count));
+            }
+        };
+        play(space);
+        return [success, remains];
+    };
+    console.log(raw.map(space => universes(space)).reduce(([success1, remains1], [success2, remains2]) => {
+        // player1 wins: (n) player1 turns * (n-1) player2 turns
+        const universes1 = [...Array(15)].reduce((universes, _, turn) => universes + success1[turn] * remains2[turn - 1] || 0, 0);
+        // player2 wins: (n) player1 turns * (n) player2 turns
+        const universes2 = [...Array(15)].reduce((universes, _, turn) => universes + success2[turn] * remains1[turn] || 0, 0);
+        return Math.max(universes1, universes2); // 309196008717909 vs 227643103580178
+    }));
+};
+day21();

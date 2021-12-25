@@ -790,4 +790,35 @@ const day21 = () => {
         return Math.max(universes1, universes2); // 309196008717909 vs 227643103580178
     }));
 };
-day21();
+// day21();
+
+/** Reactor Reboot */
+const day22 = () => {
+    const raw = fs.readFileSync('input22.txt', { encoding: 'utf-8' }).trim().split('\n')
+        .map(line => {
+            const [, state, ...coordinates] = /(on|off) x=(-?\d+)\.\.(-?\d+),y=(-?\d+)\.\.(-?\d+),z=(-?\d+)\.\.(-?\d+)/.exec(line) ?? [];
+            return state ? [state === 'on' ? 1 : 0, coordinates.map(Number)] : null;
+        });
+    const check = (x, y, z) => raw.slice(0).reverse().find(([, [x1, x2, y1, y2, z1, z2]]) => x >= x1 && x <= x2 && y >= y1 && y <= y2 && z >= z1 && z <= z2)?.at(0);
+    const n = [...Array(101)].map((_, index) => index - 50); // [-50..50]
+    console.log(n.flatMap(x => n.flatMap(y => n.flatMap(z => check(x, y, z)))).filter(state => state).length); // brute force solution: 8 sec
+
+    const union = ([x11, x12, y11, y12, z11, z12], [x21, x22, y21, y22, z21, z22]) => [
+        Math.max(x11, x21), Math.min(x12, x22),
+        Math.max(y11, y21), Math.min(y12, y22),
+        Math.max(z11, z21), Math.min(z12, z22)];
+    const size = ([x1, x2, y1, y2, z1, z2]) => [x2 - x1, y2 - y1, z2 - z1].reduce((size, n) => size * (n + 1), 1);
+    const unions = (base, cubes) => cubes.reduce((unions, cube) => {
+        const [x1, x2, y1, y2, z1, z2] = union(base, cube);
+        return x1 <= x2 && y1 <= y2 && z1 <= z2 && [...unions, [x1, x2, y1, y2, z1, z2]] || unions;
+    }, []);
+    const unique = (cube, cubes) => unions(cube, cubes)
+        .reduce((size, cube, index, unions) => size - unique(cube, unions.slice(0, index)), size(cube)); // wait... wuuut?
+
+    console.log(raw.map((step, index, steps) => {
+        const [state, base] = step;
+        const cubes = steps.slice(index + 1).map(([, cube]) => cube);
+        return [state, unique(base, cubes)]; // state and unique size of the cube (reduced by cubes above)
+    }).reduce((sum, [state, size]) => sum + (state ? size : 0), 0)); // logical solution: 80 ms
+};
+day22();

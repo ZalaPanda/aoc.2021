@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { type } = require('os');
 
 /** Sonar Sweep */
 const day1 = () => {
@@ -821,4 +822,99 @@ const day22 = () => {
         return [state, unique(base, cubes)]; // state and unique size of the cube (reduced by cubes above)
     }).reduce((sum, [state, size]) => sum + (state ? size : 0), 0)); // logical solution: 80 ms
 };
-day22();
+// day22();
+
+/** Amphipod */
+const day23 = () => {
+    const raw = fs.readFileSync('input23.txt', { encoding: 'utf-8' })
+        .match(/[ABCD]/g)
+        .map(([type]) => type); // ['C', 'A', 'B', 'D', 'B', 'A', 'D', 'C']
+
+    const consumptions = { A: 1, B: 10, C: 100, D: 1000 };
+    const entries = { A: 2, B: 4, C: 6, D: 8 };
+    const simplify = (rooms) => Object.fromEntries(Object.entries(rooms).map(([room, amphipods]) => // remove already organized amphipods
+        [room, amphipods.slice(0, amphipods.length - amphipods.slice().reverse().findIndex(amphipod => amphipod !== room) >>> 0)]));
+    const organize = (rooms) => {
+        const consumption = {
+            basic: Object.entries(rooms).flatMap(([room, amphipods]) => amphipods.map((amphipod, position) => [room, position, amphipod]))
+                .reduce(({ energy, amphipods }, [room, position, amphipod]) => ({
+                    energy: energy + consumptions[amphipod] * (
+                        Math.abs(entries[room] - entries[amphipod]) + // horizontal movement
+                        position + 1 + amphipods[amphipod] + 1), // vertical movement (up+down)
+                    amphipods: { ...amphipods, [amphipod]: amphipods[amphipod] + 1 }
+                }), { energy: 0, amphipods: { A: 0, B: 0, C: 0, D: 0 } }).energy,
+            extra: Infinity
+        };
+        const combine = (rooms, hall = Array(11).fill(null), extra = 0, steps = []) => {
+            if (extra >= consumption.extra) return;
+            const complete = Object.entries(rooms).reduce((fixed, [room, amphipods]) => ({ ...fixed, [room]: amphipods.every(type => type === room) }), {});
+            if (Object.values(complete).every(room => room) && !hall.some(amphipod => amphipod)) { // job finished
+                consumption.extra = extra;
+                console.log(consumption.basic + extra, ':', steps.join(' '));
+                return;
+            }
+
+            const situation = hall.reduce(({ inner: [lastInner, ...restInner], outer: [lastOuter, ...restOuter] }, amphipod, space) =>
+                amphipod ?
+                    { inner: [[], lastInner, ...restInner], outer: [[space], [...lastOuter, space], ...restOuter] } :
+                    { inner: [[...lastInner, space], ...restInner], outer: [[...lastOuter, space], ...restOuter] },
+                { inner: [[]], outer: [[]] });
+            const access = Object.entries(entries).reduce(({ inner, outer }, [room, entry]) => ({
+                inner: { ...inner, [room]: situation.inner.find(block => block.includes(entry)) },
+                outer: { ...outer, [room]: situation.outer.find(block => block.includes(entry)) }
+            }), { inner: {}, outer: {} });
+
+            const inwards = hall
+                .map((amphipod, space) => complete[amphipod] && access.outer[amphipod].includes(space) && { amphipod, space })
+                .filter(inward => inward)
+                .sort((a, b) => 'ABCD'.indexOf(b.amphipod) - 'ABCD'.indexOf(a.amphipod)); // order: amphipod type
+            if (inwards.length) { // hall->room
+                return inwards.map(({ amphipod, space }) => {
+                    const room = rooms[amphipod];
+                    combine(
+                        { ...rooms, [amphipod]: [...room, amphipod] },
+                        hall.map((current, index) => index === space ? null : current),
+                        extra,
+                        [...steps, `${amphipod}[${space}${amphipod}]`]);
+                });
+            }
+
+            const removeRoomEntries = space => !Object.values(entries).includes(space); // [0, 1, 2, 3, ...] -> [0, 1, 3, ...]
+            const outwards = Object.entries(rooms)
+                .flatMap(([room, [amphipod]]) => amphipod && !complete[room] && access.inner[room].filter(removeRoomEntries).map(space => ({
+                    amphipod, room, space,
+                    distance: entries[room] < space && space < entries[amphipod] ||
+                        entries[room] > space && space > entries[amphipod] ? 0 : // space between source and destination room
+                        Math.min(Math.abs(entries[room] - space), Math.abs(entries[amphipod] - space))
+                })))
+                .filter(outward => outward)
+                .sort((a, b) => 'ABCD'.indexOf(b.room) - 'ABCD'.indexOf(a.room) || a.distance - b.distance); // order: room type, least movement
+            if (outwards.length) { // room->hall
+                return outwards.map(({ amphipod, room, space, distance }) => {
+                    combine(
+                        { ...rooms, [room]: rooms[room].slice(1) },
+                        hall.map((current, index) => index === space ? amphipod : current),
+                        extra + consumptions[amphipod] * distance * 2,
+                        [...steps, `${amphipod}[${room}${space}]`]
+                    );
+                });
+            }
+        }
+        combine(rooms);
+        return consumption.basic + consumption.extra;
+    };
+
+    console.log(organize(simplify({
+        A: [raw[0], raw[4]],
+        B: [raw[1], raw[5]],
+        C: [raw[2], raw[6]],
+        D: [raw[3], raw[7]]
+    })));
+    console.log(organize(simplify({
+        A: [raw[0], 'D', 'D', raw[4]],
+        B: [raw[1], 'C', 'B', raw[5]],
+        C: [raw[2], 'B', 'A', raw[6]],
+        D: [raw[3], 'A', 'C', raw[7]]
+    }))); // a little bit slow but cant figure out how to reduce the combinations...
+};
+day23();

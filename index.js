@@ -1,5 +1,4 @@
 const fs = require('fs');
-const { type } = require('os');
 
 /** Sonar Sweep */
 const day1 = () => {

@@ -980,4 +980,24 @@ const day24 = () => {
 
     console.log(run(lowest)); // 200ms
 };
-day24();
+// day24();
+
+/** Sea Cucumber */
+const day25 = () => {
+    const raw = fs.readFileSync('input25.txt', { encoding: 'utf-8' }).split('\n').filter(row => row).map(row => [...row]);
+    const move = (situation) => situation.map((row) => row.map((type, x) => // east
+        type === '>' && (row.at(x + 1) ?? row.at(0)) === '.' ? '.' :
+            type === '.' && (row.at(x - 1) ?? row.at(-1)) === '>' ? '>' : type
+    )).map((row, y, situation) => row.map((type, x) => // south
+        type === 'v' && (situation.at(y + 1) ?? situation.at(0)).at(x) === '.' ? '.' :
+            type === '.' && (situation.at(y - 1) ?? situation.at(-1)).at(x) === 'v' ? 'v' : type
+    ));
+    const display = (situation) => situation.map(row => row.join('')).join('\n');
+    const stop = (before, number = 0) => {
+        const after = move(before);
+        if (display(before) === display(after)) return number + 1; // ok, this is NOT the best way to check if something moved :D
+        return stop(after, number + 1);
+    };
+    console.log(stop(raw));
+};
+day25();

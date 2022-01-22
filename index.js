@@ -917,4 +917,67 @@ const day23 = () => {
         D: [raw[3], 'A', 'C', raw[7]]
     }))); // a little bit slow but cant figure out how to reduce the combinations...
 };
-day23();
+// day23();
+
+/** Arithmetic Logic Unit */
+const day24 = () => {
+    const raw = fs.readFileSync('input24.txt', { encoding: 'utf-8' }).split('\n').filter(row => row)
+        .map(row => row.split(' ').map((value, index) => index && !isNaN(value) ? Number(value) : value));
+
+    const program = raw.reduce(([commands, ...rest], [instruction, a, b]) => instruction === 'inp' ? // split by "inp w"
+        [[], ...commands ? [commands, ...rest] : rest] :
+        [[...commands, [instruction, a, b]], ...rest], []).reverse();
+
+    /*
+    [program block sample]
+    inp w
+    mul x 0  -> x = 0 // NOTE: prev `x` value unimportant
+    add x z  -> x = z
+    mod x 26 -> x = z % 26
+    div z 1  -> z = z // NOTE: sometimes this changes to "div z 26"
+    add x 12 -> x = z % 26 + $random // NOTE: this value is always negative if the prev instruction is "div z 26"
+    eql x w  -> x = x === w ? 1 : 0
+    eql x 0  -> x = x ? 0 : 1 // NOTE: `x` can be 0 if `z % 26 + #random` equals the input `w`
+    mul y 0  -> y = 0 // NOTE: prev `y` value also unimportant
+    add y 25 -> y = 25
+    mul y x  -> y = 25 * x
+    add y 1  -> y = 25 * x + 1
+    mul z y  -> z *= y
+    mul y 0  -> y = 0
+    add y w  -> y = w
+    add y 1  -> y = w + $random // NOTE: always a positive number
+    mul y x  -> y *= x
+    add z y  -> z += y // NOTE: `z` must be zero at the end
+    */
+
+    const run = (execute, block = 0, number = 0, z = 0) => {
+        if (!program[block]) return z ? NaN : number;
+        const execs = execute(program[block], z);
+        while (execs.length) {
+            const [w, z] = execs.shift();
+            const result = run(execute, block + 1, number * 10 + w, z);
+            if (result) return result;
+        }
+        return NaN;
+    };
+    const highest = (commands, z) =>
+        commands[3][2] === 26 ? // "div z 1", "div z 26"
+            [z % 26 + commands[4][2]] // "add x -13", "add x 11", ...
+                .filter(w => w >= 1 && w <= 9) // only of digits 1 through 9
+                .map(w => [w, Math.floor(z / 26)]) :
+            [9, 8, 7, 6, 5, 4, 3, 2, 1] // high to low digits
+                .map(w => [w, z * 26 + (w + commands[14][2])]);
+
+    console.log(run(highest)); // 50ms
+
+    const lowest = (commands, z) =>
+        commands[3][2] === 26 ?
+            [z % 26 + commands[4][2]]
+                .filter(w => w >= 1 && w <= 9)
+                .map(w => [w, Math.floor(z / 26)]) :
+            [1, 2, 3, 4, 5, 6, 7, 8, 9] // low to high digits
+                .map(w => [w, z * 26 + (w + commands[14][2])]);
+
+    console.log(run(lowest)); // 200ms
+};
+day24();
